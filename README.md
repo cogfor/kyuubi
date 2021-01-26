@@ -1,3 +1,12 @@
+# fork 说明
+为了支持 spark-operator-on-k8s ，即在 k8s 中部署 spark-sql ，所以在开源 yaooqinn/kyuubi 基础上，主要增加了 k8s session manager 和 k8s session implement 功能。
+
+与开源实现的主要区别如下：
+
+开源 kyuubi 在服务启动时，会开启一个内嵌的 zk 服务，在接收到 jdbc 请求之后，为用户启动Progress (通过 ProgressBuilder)，实际上在Progress 内通过 spark-submit 提交了一个spark  application，这个 application 的入口是 sql engine 的 main函数（本质上是一个 spark thrift server）。这个 spark application 的host 和 port 会注册在内嵌 zk 服务中，在下次收到相同用户的 jdbc 连接时，查询 zk ，如果已存在相同用户的 spark sql application ，则可复用。
+
+但是，如果使用 spark operator on k8s 提交 SparkApplication ，则无法采用类似方式提交和管理 spark sql 应用。所以，主要的变化是，增加了 k8sSessionManager 和 k8sSessionImpl，在收到用户的 jdbc 连接请求之后，通过定制 SparkCtrlOp 服务提供的 http 接口提交 spark application，SparkCtrlOp 内部则调用 SparkOperator 接口实现 SparkApplication 应用任务的实际启动。在下次收到相同用户的 jdbc 连接时，通过 SparkCtrl 查询当前用户的 Spark Sql Application，实现 Spark Sql Application（即 Spark Thrift Server）的复用。
+
 # Kyuubi
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![](https://tokei.rs/b1/github/yaooqinn/kyuubi)](https://github.com/yaooqinn/kyuubi)
