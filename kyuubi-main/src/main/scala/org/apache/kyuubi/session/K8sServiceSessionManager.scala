@@ -17,22 +17,26 @@
 
 package org.apache.kyuubi.session
 
+import java.util.concurrent.TimeUnit
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-// import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.operation.KyuubiOperationManager
 
-class KyuubiSessionManager private (name: String) extends SessionManager(name) {
+class K8sServiceSessionManager private(name: String) extends SessionManager(name) {
 
-  def this() = this(classOf[KyuubiSessionManager].getSimpleName)
+  def this() = this(classOf[K8sServiceSessionManager].getSimpleName)
 
   val operationManager = new KyuubiOperationManager()
 
   override def initialize(conf: KyuubiConf): Unit = {
-    // ServiceDiscovery.setUpZooKeeperAuth(conf)
     super.initialize(conf)
+  }
+
+  override def start(): Unit = {
+    super.start()
   }
 
   override def openSession(
@@ -44,7 +48,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
 
-    val sessionImpl = new KyuubiSessionImpl(
+    val sessionImpl = new K8sServiceSessionImpl(
       protocol,
       username,
       password,
@@ -61,6 +65,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       handle
     } catch {
       case e: Throwable =>
+        e.printStackTrace()
+        error(e)
         try {
           sessionImpl.close()
         } catch {
@@ -69,6 +75,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         throw KyuubiSQLException(
           s"Error opening session $handle for $username due to ${e.getMessage}", e)
     }
+  }
+
+  override def closeSession(sessionHandle: SessionHandle) : Unit = {
+    // val session : K8sServiceSessionImpl = getSession(sessionHandle)
+    //  .asInstanceOf[K8sServiceSessionImpl]
+    // session.shutdownSparkSqlService()
+
+    super.closeSession(sessionHandle)
   }
 
   override protected def isServer: Boolean = true

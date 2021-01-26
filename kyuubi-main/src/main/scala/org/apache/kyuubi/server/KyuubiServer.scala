@@ -23,23 +23,25 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.ServiceDiscovery
-import org.apache.kyuubi.ha.server.EmbeddedZkServer
+// import org.apache.kyuubi.ha.HighAvailabilityConf._
+
+// import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.service.{AbstractBackendService, KinitAuxiliaryService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 
 object KyuubiServer extends Logging {
-  private val zkServer = new EmbeddedZkServer()
+  // private val zkServer = new EmbeddedZkServer()
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
-    if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
+    // TODO: changed by llz 20210113, to skip zk from k8s
+    /* val zkEnsemble = conf.get(HA_ZK_QUORUM)
+    if (zkEnsemble == null || zkEnsemble.isEmpty) {
       zkServer.initialize(conf)
       zkServer.start()
       sys.addShutdownHook(zkServer.stop())
       conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
       conf.set(HA_ZK_ACL_ENABLED, false)
-    }
+    } */
 
     val server = new KyuubiServer()
     server.initialize(conf)
@@ -70,6 +72,25 @@ object KyuubiServer extends Logging {
       s" ${Properties.javaVersion}")
     SignalRegister.registerLogger(logger)
     val conf = new KyuubiConf().loadFileDefaults()
+
+    // TODO: added by llz 20210114, first use default conf, and then use conf from main args
+    val arglist = args.toList
+    def nextOption(map : Map[String, String], list: List[String]) : Map[String, String] = {
+      list match {
+        case Nil => map
+        case "--conf" :: value :: tail if (value.split("=").length > 1) =>
+          nextOption(map ++ Map(value.split("=")(0) -> value.split("=")(1)), tail)
+        case "--conf" :: value :: tail if (value.split("=").length <= 1) =>
+          info(value + " is empty!!!")
+          nextOption(map ++ Map(value -> ""), tail)
+        case option :: tail => info("Unknown option " + option)
+          map
+      }
+    }
+    val mainConfs = nextOption(Map(), arglist)
+    mainConfs.foreach(kv => conf.set(kv._1, kv._2))
+    // end
+
     UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
     startServer(conf)
   }
@@ -80,17 +101,15 @@ class KyuubiServer(name: String) extends Serverable(name) {
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override private[kyuubi] val backendService: AbstractBackendService = new KyuubiBackendService()
-  private val discoveryService = new ServiceDiscovery(this)
 
   override def initialize(conf: KyuubiConf): Unit = {
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
     super.initialize(conf)
-    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
-      addService(discoveryService)
-      discoveryService.initialize(conf)
-    }
   }
 
-  override protected def stopServer(): Unit = KyuubiServer.zkServer.stop()
+  override protected def stopServer(): Unit = {
+    // TODO: changed by llz 20210113, to skip zk from k8s
+    // KyuubiServer.zkServer.stop()
+  }
 }

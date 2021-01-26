@@ -19,13 +19,14 @@ package org.apache.kyuubi.server
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractBackendService
-import org.apache.kyuubi.session.{KyuubiSessionManager, SessionManager}
+import org.apache.kyuubi.session.{K8sServiceSessionManager, KyuubiSessionManager, SessionManager}
 
 class KyuubiBackendService(name: String) extends AbstractBackendService(name) {
 
   def this() = this(classOf[KyuubiBackendService].getSimpleName)
 
-  override val sessionManager: SessionManager = new KyuubiSessionManager()
+  // override val sessionManager: SessionManager = new KyuubiSessionManager()
+  override val sessionManager: SessionManager = new K8sServiceSessionManager()
 
   override def initialize(conf: KyuubiConf): Unit = {
     super.initialize(conf)

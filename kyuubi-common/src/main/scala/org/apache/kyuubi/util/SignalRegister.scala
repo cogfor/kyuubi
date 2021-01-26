@@ -21,7 +21,8 @@ import java.util.Collections
 
 import scala.collection.JavaConverters._
 
-import org.apache.commons.lang.SystemUtils
+// import org.apache.commons.lang.SystemUtils
+// import org.apache.commons.lang3.SystemUtils
 import org.slf4j.Logger
 import sun.misc.{Signal, SignalHandler}
 
@@ -32,7 +33,8 @@ object SignalRegister extends Logging {
 
   def registerLogger(log: Logger): Unit = {
     Seq("TERM", "HUP", "INT").foreach { sig =>
-      if (SystemUtils.IS_OS_UNIX) {
+      // if (SystemUtils.IS_OS_UNIX) {
+      if (!System.getProperty("os.name").toLowerCase().contains("win")) {
         val signal = new Signal(sig)
         try {
           val handler = handlers.getOrElseUpdate(sig, {

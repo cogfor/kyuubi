@@ -63,6 +63,26 @@ class SparkProcessBuilder(
 
   override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
 
+  def extraJars: Option[String] = {
+    conf.foreach(x => info("****** conf : " + x._1 + " <> " + x._2))
+
+    val list1 = List(conf.get("spark.hive.metastore.mysql.driver.path"),
+      conf.get("spark.hive.metastore.postgresql.driver.path"))
+      .filter(!_.isEmpty)
+      .map(_.get)
+
+    if (list1.size == 0) {
+      Option.empty
+    } else {
+      Option(list1.reduce(_ + "," + _))
+    }
+    // env.get("SPARK_HOME").map { sparkHome => {
+      // val list1 = List(Paths.get(sparkHome, "jars", "mysql-connector-java.jar").toAbsolutePath,
+      //   Paths.get(sparkHome, "jars", "postgresql-42.2.18.jar").toAbsolutePath)
+    //  }
+    // }
+  }
+
   override def mainResource: Option[String] = {
     // 1. get the main resource jar for user specified config first
     val jarName = s"$module-$KYUUBI_VERSION.jar"
@@ -113,12 +133,19 @@ class SparkProcessBuilder(
     buffer += executable
     buffer += CLASS
     buffer += mainClass
+
+    if (!extraJars.isEmpty) {
+      buffer += JARS
+      buffer += extraJars.get
+    }
+
     conf.foreach { case (k, v) =>
       buffer += CONF
       buffer += s"$k=$v"
     }
-    // iff the keytab is specified, PROXY_USER is not supported
-    if (!useKeytab()) {
+
+    if (conf.get("spark.process.proxyuser.enable").isDefined
+      && conf.get("spark.process.proxyuser.enable").get.equals("true")) {
       buffer += PROXY_USER
       buffer += proxyUser
     }
@@ -157,6 +184,7 @@ object SparkProcessBuilder {
   private final val CONF = "--conf"
   private final val CLASS = "--class"
   private final val PROXY_USER = "--proxy-user"
+  private final val JARS = "--jars"
   private final val PRINCIPAL = "spark.kerberos.principal"
   private final val KEYTAB = "spark.kerberos.keytab"
 }

@@ -20,6 +20,7 @@ package org.apache.kyuubi.service
 import java.net.{InetAddress, ServerSocket}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.BiConsumer
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
@@ -172,6 +173,10 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     val ipAddress = authFactory.getIpAddress.orNull
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
+    // added 20210119
+    info("jdbc connect parameters : ")
+    configuration.foreach(tp => info(tp._1 + "=>" + tp._2))
+
     val sessionHandle = be.openSession(
       protocol, userName, req.getPassword, ipAddress, configuration)
     sessionHandle
@@ -531,6 +536,35 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     override def createContext(in: TProtocol, out: TProtocol): ServerContext = {
       new FeServiceServerContext()
     }
+  }
+
+  // TODO: add by llz 20201223
+  override def GetQueryId(req: TGetQueryIdReq): TGetQueryIdResp = {
+    val operationHandle = OperationHandle(req.getOperationHandle)
+    val sid = be.sessionManager
+      .operationManager
+      .getOperation(operationHandle)
+      .getSession
+      .handle
+      .toString
+    new TGetQueryIdResp(sid)
+  }
+
+  // TODO: add by llz 20201223
+  override def SetClientInfo(req: TSetClientInfoReq): TSetClientInfoResp = {
+    val sessionHandle = SessionHandle(req.getSessionHandle)
+    req.getConfiguration.entrySet().iterator()
+    req.getConfiguration.forEach(new BiConsumer[String, String] {
+      override def accept(t: String, u: String): Unit = {
+        logger.info(t + ":" + u)
+      }
+    })
+
+    req.getConfiguration.asScala.foreach(x => {
+      be.sessionManager.getSession(sessionHandle).conf.asJava.put(x._1, x._2)
+    })
+
+    new TSetClientInfoResp(OK_STATUS)
   }
 }
 

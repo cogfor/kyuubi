@@ -32,6 +32,13 @@
     <name>Kyuubi Project Common</name>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.9</version>
+            <scope>provided</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -45,12 +52,13 @@
 
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
+            <artifactId>slf4j-log4j12</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-service-rpc</artifactId>
+            <version>${hive.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -59,15 +67,6 @@
             <artifactId>hadoop-common</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-service-rpc</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>

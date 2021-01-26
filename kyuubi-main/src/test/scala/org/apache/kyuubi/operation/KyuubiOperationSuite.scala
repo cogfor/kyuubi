@@ -19,31 +19,31 @@ package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.server.EmbeddedZkServer
+// import org.apache.kyuubi.ha.HighAvailabilityConf._
+// import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.server.KyuubiServer
 
 abstract class KyuubiOperationSuite extends JDBCTests {
 
   protected val conf: KyuubiConf
 
-  private var zkServer: EmbeddedZkServer = _
+  // private var zkServer: EmbeddedZkServer = _
   private var server: KyuubiServer = _
 
   override def beforeAll(): Unit = {
-    zkServer = new EmbeddedZkServer()
+    // zkServer = new EmbeddedZkServer()
     conf.set(KyuubiConf.EMBEDDED_ZK_PORT, -1)
     val zkData = Utils.createTempDir()
     conf.set(KyuubiConf.EMBEDDED_ZK_TEMP_DIR, zkData.toString)
-    zkServer.initialize(conf)
-    zkServer.start()
+    // zkServer.initialize(conf)
+    // zkServer.start()
 
     conf.set("spark.ui.enabled", "false")
     conf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     conf.set(KyuubiConf.ENGINE_CHECK_INTERVAL, 4000L)
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 10000L)
-    conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-    conf.set(HA_ZK_ACL_ENABLED, false)
+    // conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
+    // conf.set(HA_ZK_ACL_ENABLED, false)
 
     server = KyuubiServer.startServer(conf)
     super.beforeAll()
@@ -56,10 +56,10 @@ abstract class KyuubiOperationSuite extends JDBCTests {
       server = null
     }
 
-    if (zkServer != null) {
+    /* if (zkServer != null) {
       zkServer.stop()
       zkServer = null
-    }
+    } */
     super.afterAll()
   }
 

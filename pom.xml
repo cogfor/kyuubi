@@ -26,11 +26,11 @@
     <version>1.1.0-SNAPSHOT</version>
     <modules>
         <module>dev/kyuubi-codecov</module>
-        <module>externals/kyuubi-download</module>
+        <!--<module>externals/kyuubi-download</module>-->
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-common</module>
-        <module>kyuubi-ha</module>
+        <!-- <module>kyuubi-ha</module> -->
         <module>kyuubi-main</module>
     </modules>
     <packaging>pom</packaging>
@@ -61,9 +61,12 @@
 
         <apacheds.version>2.0.0-M15</apacheds.version>
         <guava.version>11.0.2</guava.version>
-        <curator.version>2.7.1</curator.version>
+        <!--<curator.version>2.7.1</curator.version>
         <hadoop.version>2.7.4</hadoop.version>
-        <hive.version>2.3.7</hive.version>
+        <hive.version>2.3.7</hive.version>-->
+        <curator.version>4.0.0</curator.version>
+        <hadoop.version>3.3.0</hadoop.version>
+        <hive.version>3.0.0</hive.version>
         <netty3.version>3.7.0.Final</netty3.version>
         <spark.version>3.0.1</spark.version>
         <slf4j.version>1.7.30</slf4j.version>
@@ -177,6 +180,7 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-common</artifactId>
                 <version>${hadoop.version}</version>
+              <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>com.sun.jersey</groupId>
@@ -294,6 +298,7 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+              <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.code.findbugs</groupId>
@@ -306,18 +311,21 @@
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-sql_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
+              <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-hive_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
+              <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
+              <scope>provided</scope>
             </dependency>
 
             <!--
@@ -365,6 +373,7 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-framework</artifactId>
                 <version>${curator.version}</version>
+              <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
@@ -377,6 +386,7 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
                 <version>${curator.version}</version>
+              <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>io.netty</groupId>
@@ -397,6 +407,7 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
                 <version>${curator.version}</version>
+              <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
@@ -409,6 +420,7 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-client</artifactId>
                 <version>${curator.version}</version>
+               <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
@@ -439,12 +451,14 @@
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.binary.version}</artifactId>
                 <version>${scalatest.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-minikdc</artifactId>
                 <version>${hadoop.version}</version>
+              <scope>test</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.directory.server</groupId>
@@ -469,7 +483,8 @@
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-service</artifactId>
                 <version>${apacheds.version}</version>
-                <exclusions>
+               <scope>test</scope>
+                 <exclusions>
                     <exclusion>
                         <groupId>bouncycastle</groupId>
                         <artifactId>bcprov-jdk15</artifactId>
@@ -481,6 +496,7 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.version}</version>
+              <scope>test</scope>
                 <exclusions>
                     <!-- netty3 used only in Zookeeper Server -->
                     <exclusion>
@@ -506,6 +522,7 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty</artifactId>
                 <version>${netty3.version}</version>
+              <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -514,6 +531,8 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
@@ -691,7 +710,7 @@
                     </executions>
                 </plugin>
 
-                <plugin>
+                <!-- <plugin>
                     <groupId>org.scalastyle</groupId>
                     <artifactId>scalastyle-maven-plugin</artifactId>
                     <version>${maven.plugin.scalastyle.version}</version>
@@ -713,7 +732,8 @@
                             </goals>
                         </execution>
                     </executions>
-                </plugin>
+                </plugin> -->
+
                 <plugin>
                     <groupId>com.googlecode.maven-download-plugin</groupId>
                     <artifactId>download-maven-plugin</artifactId>

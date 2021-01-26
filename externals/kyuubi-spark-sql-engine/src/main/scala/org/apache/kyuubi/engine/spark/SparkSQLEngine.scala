@@ -26,8 +26,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
-import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
+// import org.apache.kyuubi.ha.HighAvailabilityConf._
+// import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
@@ -37,16 +37,17 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
-  private val discoveryService = new ServiceDiscovery(this)
+  // TODO: changed 20210122 to skip HA
+  // private val discoveryService = new ServiceDiscovery(this)
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
     super.initialize(conf)
-    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+    /* if (ServiceDiscovery.supportServiceDiscovery(conf)) {
       addService(discoveryService)
       discoveryService.initialize(conf)
-    }
+    } */
   }
 
   override protected def stopServer(): Unit = {
@@ -64,14 +65,22 @@ object SparkSQLEngine extends Logging {
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
-    sparkConf.setIfMissing("spark.master", "local")
-    sparkConf.setIfMissing("spark.ui.port", "0")
+    // TODO: llz changed 20210105 to use k8s operator default config
+    // sparkConf.setIfMissing("spark.master", "local")
+    // sparkConf.setIfMissing("spark.ui.port", "0")
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
-    sparkConf.setIfMissing("spark.app.name", appName)
+    // sparkConf.setIfMissing("spark.app.name", appName)
 
-    kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
-    kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
+    sparkConf.setAppName(appName)
+
+    // kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
+    // kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
+
+    if (kyuubiConf.getOption("spark.thrift.jdbc.bind.port").isDefined) {
+      kyuubiConf.set(KyuubiConf.FRONTEND_BIND_PORT,
+        kyuubiConf.getOption("spark.thrift.jdbc.bind.port").get.toInt)
+    }
 
     val prefix = "spark.kyuubi."
 

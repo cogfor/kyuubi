@@ -103,35 +103,41 @@ if [[ $(command -v git) ]]; then
     unset GITREV
 fi
 
-VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
-
-JAVA_VERSION=$("$MVN" help:evaluate -Dexpression=java.version $@ 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
-
-SCALA_VERSION=$("$MVN" help:evaluate -Dexpression=scala.binary.version $@ 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
-
-SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
-
-HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
-
-HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
-    | grep -v "INFO"\
-    | grep -v "WARNING"\
-    | tail -n 1)
+#VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null\
+#    | grep -v "INFO"\
+#    | grep -v "WARNING"\
+#    | tail -n 1)
+#
+#JAVA_VERSION=$("$MVN" help:evaluate -Dexpression=java.version $@ 2>/dev/null\
+#    | grep -v "INFO"\
+#    | grep -v "WARNING"\
+#    | tail -n 1)
+#
+#SCALA_VERSION=$("$MVN" help:evaluate -Dexpression=scala.binary.version $@ 2>/dev/null\
+#    | grep -v "INFO"\
+#    | grep -v "WARNING"\
+#    | tail -n 1)
+#
+#SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
+#    | grep -v "INFO"\
+#    | grep -v "WARNING"\
+#    | tail -n 1)
+#
+#HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
+#    | grep -v "INFO"\
+#    | grep -v "WARNING"\
+#    | tail -n 1)
+#
+#HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
+#    | grep -v "INFO"\
+#    | grep -v "WARNING"\
+#    | tail -n 1)
+VERSION="1.1.0-SNAPSHOT"
+JAVA_VERSION="1.8"
+SCALA_VERSION="2.12"
+SPARK_VERSION="3.0.1"
+HADOOP_VERSION="3.2.0"
+HIVE_VERSION="3.0.0"
 
 echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
 
@@ -150,7 +156,7 @@ BUILD_COMMAND=("$MVN" -T 1C clean package -DskipTests $@)
 echo -e "\nBuilding with..."
 echo -e "\$ ${BUILD_COMMAND[@]}\n"
 
-"${BUILD_COMMAND[@]}"
+#"${BUILD_COMMAND[@]}"
 
 # Make directories
 rm -rf "$DISTDIR"
@@ -176,7 +182,8 @@ else
   HIVE_VERSION_SUFFIX="-hive1.2"
 fi
 
-cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/" "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/"
+#cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/" "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/"
+#cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}/" "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}/"
 cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-$VERSION.jar" "$DISTDIR/externals/engines/spark"
 
 # Copy license and ASF files

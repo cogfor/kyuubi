@@ -35,8 +35,8 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{ShareLevel, SQLEngineAppName}
 import org.apache.kyuubi.engine.ShareLevel.{SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.ServiceDiscovery
+// import org.apache.kyuubi.ha.HighAvailabilityConf._
+// import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 class KyuubiSessionImpl(
@@ -68,10 +68,10 @@ class KyuubiSessionImpl(
   }
 
   private val boundAppName: SQLEngineAppName = SQLEngineAppName(shareLevel, appUser, handle)
-
+/*
   private val appZkNamespace: String = boundAppName.getZkNamespace(sessionConf.get(HA_ZK_NAMESPACE))
-
   private lazy val zkClient = ServiceDiscovery.startZookeeperClient(sessionConf)
+*/
   private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
 
   private var transport: TTransport = _
@@ -79,7 +79,8 @@ class KyuubiSessionImpl(
   private var remoteSessionHandle: TSessionHandle = _
 
   private def getServerHost: Option[(String, Int)] = {
-    try {
+    Option.empty
+    /* try {
       val hosts = zkClient.getChildren.forPath(appZkNamespace)
       // TODO: use last one because to avoid touching some maybe-crashed engines
       // We need a big improvement here.
@@ -93,13 +94,13 @@ class KyuubiSessionImpl(
       }
     } catch {
       case _: Exception => None
-    }
+    } */
   }
 
   override def open(): Unit = {
     super.open()
     // Init zookeeper client here to capture errors
-    zkClient
+    /* zkClient
     getServerHost match {
       case Some((host, port)) => openSession(host, port)
       case None =>
@@ -139,7 +140,7 @@ class KyuubiSessionImpl(
       zkClient.close()
     } catch {
       case e: IOException => error("Failed to release the zkClient after session established", e)
-    }
+    } */
   }
 
   private def openSession(host: String, port: Int): Unit = {

@@ -385,7 +385,7 @@ object KyuubiConf {
     .doc("The timeout(ms) of creating the connection to remote sql query engine")
     .version("1.0.0")
     .timeConf
-    .createWithDefault(Duration.ofSeconds(15).toMillis)
+    .createWithDefault(Duration.ofSeconds(60).toMillis)
 
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
@@ -499,4 +499,26 @@ object KyuubiConf {
     .transform(_.toUpperCase(Locale.ROOT))
     .checkValues(ShareLevel.values.map(_.toString))
     .createWithDefault(ShareLevel.USER.toString)
+
+  // TODO: added by llz 20201229
+  val HIVE_METASTORE_MYSQL_DRIVER_PATH: OptionalConfigEntry[String] =
+    buildConf("spark.hive.metastore.mysql.driver.path")
+      .doc("hive metastore mysql jdbc connector")
+      .version("1.0.0")
+      .stringConf
+      .createOptional
+
+  val HIVE_METASTORE_POSTGRESQL_DRIVER_PATH: OptionalConfigEntry[String] =
+    buildConf("spark.hive.metastore.postgresql.driver.path")
+      .doc("hive metastore postgresql jdbc connector")
+      .version("1.0.0")
+      .stringConf
+      .createOptional
+
+  val THRIFT_JDBC_BIND_PORT: ConfigEntry[Int] =
+    buildConf("spark.thrift.jdbc.bind.port")
+      .doc("thrift jdbc bind port")
+      .version("1.0.0")
+      .intConf
+      .createWithDefault(0)
 }
