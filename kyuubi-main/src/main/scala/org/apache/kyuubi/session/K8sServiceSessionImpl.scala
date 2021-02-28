@@ -17,28 +17,27 @@
 
 package org.apache.kyuubi.session
 
-import java.io.{InputStream, IOException}
+import java.io.{IOException, InputStream}
 import java.nio.charset.StandardCharsets
+import java.util
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
-
 import org.apache.curator.utils.ZKPaths
 import org.apache.hive.service.rpc.thrift._
 import org.apache.http.client.methods.{CloseableHttpResponse, HttpDelete, HttpGet, HttpPost, HttpUriRequest}
 import org.apache.http.impl.client.{CloseableHttpClient, DefaultHttpClient, HttpClientBuilder}
 import org.apache.http.entity.StringEntity
-
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
-
 import com.google.gson.{Gson, JsonArray, JsonElement, JsonObject, JsonParser}
-
 import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.{CreateUserStatement, OperationHandle, OperationType}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 case class UserCred(username: String, password: String)
@@ -74,6 +73,7 @@ class K8sServiceSessionImpl(
     sessionManager: K8sServiceSessionManager,
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  val ADMIN_USER_NAME = "admin"
 
   private def configureSession(): Unit = {
     conf.foreach {
@@ -103,6 +103,9 @@ class K8sServiceSessionImpl(
   }
   private def getSparkAppAuthtUrl() : String = {
     "http://" + sparkAppControlHost + ":" + sparkAppControlPort + sparkAppJwtAuthUrl
+  }
+  private def getSparkCreateUserUrl() : String = {
+    "http://" + sparkAppControlHost + ":" + sparkAppControlPort + "/api/v1/user/register"
   }
 
   import java.io.BufferedReader
@@ -198,30 +201,14 @@ class K8sServiceSessionImpl(
   private def doDeleteSqlService(user: String, password: String) : Unit = {
     val client = httpClientBuilder.build()
     try {
-      val authjsonstr = new Gson().toJson(UserCred(user, password))
-      val auth = new HttpPost(getSparkAppAuthtUrl())
-      auth.setHeader("Content-type", "application/json")
-      auth.setEntity(new StringEntity(authjsonstr))
-      val authRsp = doHttpExecute(client, auth)
-      info(authRsp)
+      val token = password
+      val del = new HttpDelete(getSparkAppDefaultUrl())
+      del.setHeader("Content-type", "application/json")
+      del.addHeader("Authorization", "Bearer " + token)
+      val delRsp = doHttpExecute(client, del)
+      info(delRsp)
 
-      throwAuthException(authRsp._1, authRsp._2)
-
-      val jsonobj = new JsonParser().parse(authRsp._2)
-      if (jsonobj != null) {
-        val token = jsonobj.getAsJsonObject()
-          .getAsJsonObject("body")
-          .getAsJsonObject("obj")
-          .get("token").getAsString
-
-        val del = new HttpDelete(getSparkAppDefaultUrl())
-        del.setHeader("Content-type", "application/json")
-        del.addHeader("Authorization", "Bearer " + token)
-        val delRsp = doHttpExecute(client, del)
-        info(delRsp)
-
-        throwDeleteException(delRsp._1, delRsp._2)
-      }
+      throwDeleteException(delRsp._1, delRsp._2)
     } catch {
       case e: SparkSqlServiceException => throw e
       case e: Throwable =>
@@ -239,21 +226,8 @@ class K8sServiceSessionImpl(
     val client = httpClientBuilder.build()
     info(s" user jdbc request param : user=${user}, resource=${resource}, httpPostJson=${new Gson().toJson(resource)}")
     try {
-      val authjsonstr = new Gson().toJson(UserCred(user, password))
-      val auth = new HttpPost(getSparkAppAuthtUrl())
-      auth.setHeader("Content-type", "application/json")
-      auth.setEntity(new StringEntity(authjsonstr))
-      val authRsp = doHttpExecute(client, auth)
-      info(authRsp)
-
-      throwAuthException(authRsp._1, authRsp._2)
-
-      val jsonobj = new JsonParser().parse(authRsp._2)
-      if (jsonobj != null) {
-        val token = jsonobj.getAsJsonObject()
-          .getAsJsonObject("body")
-          .getAsJsonObject("obj")
-          .get("token").getAsString
+      if (password != null) {
+        val token = password
 
         val create = new HttpPost(getSparkAppDefaultUrl())
         create.setHeader("Content-type", "application/json")
@@ -313,13 +287,52 @@ class K8sServiceSessionImpl(
           throw SparkApplicationCreateException("create spark sql, response is wrong!")
         }
       } else {
-        throw new SparkSqlServiceException(10000 + authRsp._1, "auth response is wrong!")
+        throw new SparkSqlServiceException(10000, "password is empty!")
       }
     } catch {
       case e: SparkSqlServiceException => throw e
       case e: Throwable =>
         e.printStackTrace()
         throw SparkApplicationInternalException(e.getMessage)
+    } finally {
+      client.close()
+    }
+  }
+  case class CreateUserReq(username: String, password: String, sets: util.Map[String, String])
+
+  def createUser(newname: String, newpw: String, sets: util.Map[String, String]): String = {
+    val client = httpClientBuilder.build()
+    info(s" current user=${user}, new user=${new Gson().toJson(CreateUserReq(newname, newpw, sets))}")
+    try {
+      if (password != null) {
+        val token = password
+
+        val createUser = new HttpPost(getSparkCreateUserUrl())
+        createUser.setHeader("Content-type", "application/json")
+        createUser.addHeader("Authorization", "Bearer " + token)
+        createUser.setEntity(new StringEntity(new Gson().toJson(CreateUserReq(newname, newpw, sets))))
+        val createUserRsp = doHttpExecute(client, createUser)
+        info(createUserRsp)
+
+        try {
+          val rsp = new JsonParser().parse(createUserRsp._2)
+          rsp.getAsJsonObject().get("msg").getAsString
+        } catch {
+          case e: Exception => {
+            error(e)
+            createUserRsp._2
+          }
+        }
+      } else {
+        throw new SparkSqlServiceException(10000, "password is empty!")
+      }
+    } catch {
+      case e: SparkSqlServiceException =>
+        error(e.getMessage, e)
+        e.getMessage
+      case e: Throwable =>
+        error(e.getMessage, e)
+        e.getMessage
     } finally {
       client.close()
     }
@@ -434,4 +447,43 @@ class K8sServiceSessionImpl(
       }
     }
   }
+
+  private def isAdministratorUser(): Boolean = {
+    user.equals(ADMIN_USER_NAME)
+  }
+
+  private def isCreateUserCommand(statement: String): Boolean = {
+    statement.trim.toLowerCase().startsWith("create user ")
+  }
+
+  override def fetchResults(operationHandle: OperationHandle,
+      orientation: FetchOrientation,
+      maxRows: Int,
+      fetchLog: Boolean): TRowSet = {
+    val oper = sessionManager.operationManager.getOperation(operationHandle)
+    if (oper.isInstanceOf[CreateUserStatement]) {
+      operationHandle.setHasResultSet(false)
+      oper.getNextRowSet(orientation, maxRows)
+    } else {
+      super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
+    }
+  }
+
+    override def executeStatement(statement: String): OperationHandle = {
+    super.executeStatement(statement)
+  }
+
+  override def executeStatement(statement: String, queryTimeout: Long): OperationHandle = {
+    super.executeStatement(statement, queryTimeout)
+  }
+
+  override def executeStatementAsync(statement: String): OperationHandle = {
+    super.executeStatementAsync(statement)
+  }
+
+  override def executeStatementAsync(statement: String, queryTimeout: Long): OperationHandle = {
+    super.executeStatementAsync(statement, queryTimeout)
+  }
+
+
 }

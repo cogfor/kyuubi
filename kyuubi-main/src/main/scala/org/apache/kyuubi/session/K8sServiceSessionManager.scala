@@ -17,19 +17,21 @@
 
 package org.apache.kyuubi.session
 
+import java.util
 import java.util.concurrent.TimeUnit
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.KyuubiOperationManager
+import org.apache.kyuubi.operation.{K8sOperationManager, KyuubiOperationManager, Operation}
+import spark.sql.dialect.executor.DialectCommandOperator
 
 class K8sServiceSessionManager private(name: String) extends SessionManager(name) {
 
   def this() = this(classOf[K8sServiceSessionManager].getSimpleName)
 
-  val operationManager = new KyuubiOperationManager()
+  // val operationManager = new KyuubiOperationManager()
+  val operationManager = new K8sOperationManager(name)
 
   override def initialize(conf: KyuubiConf): Unit = {
     super.initialize(conf)

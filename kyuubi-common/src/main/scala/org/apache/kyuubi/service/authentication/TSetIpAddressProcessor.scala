@@ -44,8 +44,17 @@ class TSetIpAddressProcessor[I <: Iface](
     val transport = in.getTransport
     transport match {
       case transport1: TSaslServerTransport =>
-        val userName = transport1.getSaslServer.getAuthorizationID
-        THREAD_LOCAL_USER_NAME.set(userName)
+        // TODO: 20210228 llz
+        //val userName = transport1.getSaslServer.getAuthorizationID
+        val userTokenStr = transport1.getSaslServer.getAuthorizationID
+        val userToken = userTokenStr.split("\t")
+        if (userToken.length >= 2) {
+          THREAD_LOCAL_USER_NAME.set(userToken(0))
+          THREAD_LOCAL_USER_JWT.set(userToken(1))
+          //THREAD_LOCAL_USER_PW.set(userToken(1))
+        } else {
+          THREAD_LOCAL_USER_NAME.set(userToken(0))
+        }
       case _ =>
     }
   }
@@ -77,8 +86,17 @@ object TSetIpAddressProcessor {
   private val THREAD_LOCAL_USER_NAME = new ThreadLocal[String]() {
     override protected def initialValue: String = null
   }
+  private val THREAD_LOCAL_USER_PW = new ThreadLocal[String]() {
+    override protected def initialValue: String = null
+  }
+  private val THREAD_LOCAL_USER_JWT = new ThreadLocal[String]() {
+    override protected def initialValue: String = null
+  }
 
   def getUserIpAddress: String = THREAD_LOCAL_IP_ADDRESS.get
 
   def getUserName: String = THREAD_LOCAL_USER_NAME.get
+
+  def getUserPw: String = THREAD_LOCAL_USER_PW.get
+  def getUserJwt: String = THREAD_LOCAL_USER_JWT.get
 }

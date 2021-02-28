@@ -69,12 +69,14 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       functionName: String): Operation
 
   final def addOperation(operation: Operation): Operation = synchronized {
+    info(s"add operation : ${operation.getHandle}")
     handleToOperation.put(operation.getHandle, operation)
     operation
   }
 
   @throws[KyuubiSQLException]
   final def getOperation(opHandle: OperationHandle): Operation = {
+    info(s"get operation : ${opHandle}")
     val operation = synchronized { handleToOperation.get(opHandle) }
     if (operation == null) throw KyuubiSQLException(s"Invalid $opHandle")
     operation
@@ -82,6 +84,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
 
   @throws[KyuubiSQLException]
   final def removeOperation(opHandle: OperationHandle): Operation = synchronized {
+    info(s"remove operation : ${opHandle}")
     val operation = handleToOperation.remove(opHandle)
     if (operation == null) throw KyuubiSQLException(s"Invalid $opHandle")
     operation
@@ -89,6 +92,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
 
   @throws[KyuubiSQLException]
   final def cancelOperation(opHandle: OperationHandle): Unit = {
+    info(s"cancel operation : ${opHandle}")
     val operation = getOperation(opHandle)
     import OperationState._
     operation.getStatus.state match {
@@ -99,6 +103,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
 
   @throws[KyuubiSQLException]
   final def closeOperation(opHandle: OperationHandle): Unit = {
+    info(s"close operation : ${opHandle}")
     val operation = removeOperation(opHandle)
     operation.close()
   }

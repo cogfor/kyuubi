@@ -26,7 +26,7 @@
     <version>1.1.0-SNAPSHOT</version>
     <modules>
         <module>dev/kyuubi-codecov</module>
-        <!--<module>externals/kyuubi-download</module>-->
+        <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-common</module>
@@ -65,7 +65,7 @@
         <hadoop.version>2.7.4</hadoop.version>
         <hive.version>2.3.7</hive.version>-->
         <curator.version>4.0.0</curator.version>
-        <hadoop.version>3.3.0</hadoop.version>
+        <hadoop.version>3.2.0</hadoop.version>
         <hive.version>3.0.0</hive.version>
         <netty3.version>3.7.0.Final</netty3.version>
         <spark.version>3.0.1</spark.version>
@@ -326,6 +326,36 @@
                 <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
               <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>spark-hive_2.12</artifactId>
+                        <groupId>org.apache.spark</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hive-cli</artifactId>
+                        <groupId>org.apache.hive</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hive-jdbc</artifactId>
+                        <groupId>org.apache.hive</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hive-beeline</artifactId>
+                        <groupId>org.apache.hive</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jpam</artifactId>
+                        <groupId>net.sf.jpam</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>spark-tags_2.12</artifactId>
+                        <groupId>org.apache.spark</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>unused</artifactId>
+                        <groupId>org.spark-project.spark</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!--

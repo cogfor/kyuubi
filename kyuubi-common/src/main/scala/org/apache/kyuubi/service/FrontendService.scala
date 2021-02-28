@@ -161,6 +161,14 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     }
   }
 
+  // TODO: 20210228 llz
+  private def getUserPw(req: TOpenSessionReq): String = {
+    authFactory.getRemotePw.getOrElse(null)
+  }
+  private def getUserJwt(req: TOpenSessionReq): String = {
+    authFactory.getRemoteJwt.getOrElse(null)
+  }
+
   private def getMinVersion(versions: TProtocolVersion*): TProtocolVersion = {
     versions.minBy(_.getValue)
   }
@@ -170,21 +178,23 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
     val userName = getUserName(req)
+    val password = getUserPw(req)
+    val jwt = getUserJwt(req)
     val ipAddress = authFactory.getIpAddress.orNull
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
-    // added 20210119
-    info("jdbc connect parameters : ")
+    // added 20210119 llz
+    info(s"jdbc connect parameters : ${userName}, ${password}, ${ipAddress}")
     configuration.foreach(tp => info(tp._1 + "=>" + tp._2))
-
+    // TODO: 20210228 llz
     val sessionHandle = be.openSession(
-      protocol, userName, req.getPassword, ipAddress, configuration)
+      protocol, userName, jwt, ipAddress, configuration)
     sessionHandle
   }
 
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
     debug(req.toString)
-    info("Client protocol version: " + req.getClient_protocol)
+    info("Client protocol version: " + req.getClient_protocol + " : " + req.getUsername + " : " + req.getPassword)
     val resp = new TOpenSessionResp
     try {
       val sessionHandle = getSessionHandle(req, resp)

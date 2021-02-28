@@ -17,11 +17,14 @@
 
 package org.apache.kyuubi.service.authentication
 
+import org.apache.kyuubi.Logging
+
 /**
  * This authentication provider allows any combination of username and password.
  */
-class AnonymousAuthenticationProviderImpl extends PasswdAuthenticationProvider {
+class AnonymousAuthenticationProviderImpl extends PasswdAuthenticationProvider with Logging {
   override def authenticate(user: String, password: String): Unit = {
     // no-op authentication
+    info(s"AnonymousAuthenticationProviderImpl : username=${user}, password=${password}")
   }
 }

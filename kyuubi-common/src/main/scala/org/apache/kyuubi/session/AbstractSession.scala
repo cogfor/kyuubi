@@ -52,13 +52,13 @@ abstract class AbstractSession(
 
   private final val opHandleSet = new java.util.HashSet[OperationHandle]
 
-  private def acquire(userAccess: Boolean): Unit = synchronized {
+  protected def acquire(userAccess: Boolean): Unit = synchronized {
     if (userAccess) {
       _lastAccessTime = System.currentTimeMillis
     }
   }
 
-  private def release(userAccess: Boolean): Unit = {
+  protected def release(userAccess: Boolean): Unit = {
     if (userAccess) {
       _lastAccessTime = System.currentTimeMillis
     }
@@ -69,7 +69,7 @@ abstract class AbstractSession(
     }
   }
 
-  private def withAcquireRelease[T](userAccess: Boolean = true)(f: => T): T = {
+  protected def withAcquireRelease[T](userAccess: Boolean = true)(f: => T): T = {
     acquire(userAccess)
     try f finally release(userAccess)
   }

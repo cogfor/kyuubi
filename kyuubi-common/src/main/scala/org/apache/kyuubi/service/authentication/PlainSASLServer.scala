@@ -29,6 +29,8 @@ class PlainSASLServer(
     handler: CallbackHandler,
     method: AuthMethods.AuthMethod) extends SaslServer {
   private var user: String = _
+  private var userAndPw: String = _
+  private var jwtToken: String = _
 
   override def getMechanismName: String = PlainSASLServer.PLAIN_METHOD
 
@@ -75,6 +77,9 @@ class PlainSASLServer(
       if (!acCallback.isAuthorized) {
         throw new SaslException("Authentication failed")
       }
+      // TODO: 20210228 llz
+      userAndPw = user + "\t" + passwd
+      jwtToken = acCallback.getAuthorizedID
     } catch {
       case eL: IllegalStateException => throw new SaslException("Invalid message format", eL)
       case eI: IOException => throw new SaslException("Error validating the login", eI)
@@ -86,7 +91,8 @@ class PlainSASLServer(
 
   override def isComplete: Boolean = user != null
 
-  override def getAuthorizationID: String = user
+  // TODO: 20210228 llz
+  override def getAuthorizationID: String = user + "\t" + jwtToken // userAndPw //user
 
   override def unwrap(incoming: Array[Byte], offset: Int, len: Int): Array[Byte] = {
     throw new UnsupportedOperationException

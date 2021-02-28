@@ -25,14 +25,14 @@ import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
-class KyuubiOperationManager private (name: String) extends OperationManager(name) {
+class KyuubiOperationManager (name: String) extends OperationManager(name) {
 
   def this() = this(classOf[KyuubiOperationManager].getSimpleName)
 
-  private val handleToClient = new ConcurrentHashMap[SessionHandle, TCLIService.Iface]()
-  private val handleToTSessionHandle = new ConcurrentHashMap[SessionHandle, TSessionHandle]()
+  protected val handleToClient = new ConcurrentHashMap[SessionHandle, TCLIService.Iface]()
+  protected val handleToTSessionHandle = new ConcurrentHashMap[SessionHandle, TSessionHandle]()
 
-  private def getThriftClient(sessionHandle: SessionHandle): TCLIService.Iface = {
+  protected def getThriftClient(sessionHandle: SessionHandle): TCLIService.Iface = {
     val client = handleToClient.get(sessionHandle)
     if (client == null) {
       throw KyuubiSQLException(s"$sessionHandle has not been initialized or already been closed")
@@ -40,7 +40,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     client
   }
 
-  private def getRemoteTSessionHandle(sessionHandle: SessionHandle): TSessionHandle = {
+  protected def getRemoteTSessionHandle(sessionHandle: SessionHandle): TSessionHandle = {
     val tSessionHandle = handleToTSessionHandle.get(sessionHandle)
     if (tSessionHandle == null) {
       throw KyuubiSQLException(s"$sessionHandle has not been initialized or already been closed")

@@ -30,7 +30,8 @@ object AuthenticationProviderFactory {
   def getAuthenticationProvider(
       method: AuthMethod,
       conf: KyuubiConf): PasswdAuthenticationProvider = method match {
-    case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
+    //case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
+    case AuthMethods.NONE => new HttpAuthenticationProviderImpl(conf)
     case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }

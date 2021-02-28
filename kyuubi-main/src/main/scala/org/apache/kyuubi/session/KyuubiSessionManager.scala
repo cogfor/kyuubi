@@ -28,7 +28,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def this() = this(classOf[KyuubiSessionManager].getSimpleName)
 
-  val operationManager = new KyuubiOperationManager()
+  val operationManager = new KyuubiOperationManager(name)
 
   override def initialize(conf: KyuubiConf): Unit = {
     // ServiceDiscovery.setUpZooKeeperAuth(conf)

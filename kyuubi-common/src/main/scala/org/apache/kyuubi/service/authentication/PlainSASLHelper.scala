@@ -19,14 +19,14 @@ package org.apache.kyuubi.service.authentication
 
 import java.security.Security
 import java.util.Collections
+
 import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
 import javax.security.auth.login.LoginException
 import javax.security.sasl.{AuthenticationException, AuthorizeCallback}
-
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.kyuubi.Logging
 import org.apache.thrift.{TProcessor, TProcessorFactory}
 import org.apache.thrift.transport.{TSaslClientTransport, TSaslServerTransport, TTransport, TTransportFactory}
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
@@ -42,7 +42,7 @@ object PlainSASLHelper {
   }
 
   private class PlainServerCallbackHandler private(authMethod: AuthMethod, conf: KyuubiConf)
-    extends CallbackHandler {
+    extends CallbackHandler with Logging {
 
     def this(authMethodStr: String, conf: KyuubiConf) =
       this(AuthMethods.withName(authMethodStr), conf)
@@ -52,19 +52,31 @@ object PlainSASLHelper {
       var username: String = null
       var password: String = null
       var ac: AuthorizeCallback = null
+
       for (callback <- callbacks) {
         callback match {
           case nc: NameCallback =>
+            info(s" PlainServerCallbackHandler NameCallback ${nc}")
             username = nc.getName
           case pc: PasswordCallback =>
+            info(s" PlainServerCallbackHandler NameCallback ${pc}")
             password = new String(pc.getPassword)
-          case a: AuthorizeCallback => ac = a
+          case a: AuthorizeCallback =>
+            info(s" PlainServerCallbackHandler AuthorizeCallback ${a}")
+            ac = a
           case _ => throw new UnsupportedCallbackException(callback)
         }
       }
+
+      info(s" PlainServerCallbackHandler : ${username}, ${password}")
+
       val provider = AuthenticationProviderFactory.getAuthenticationProvider(authMethod, conf)
       provider.authenticate(username, password)
       if (ac != null) ac.setAuthorized(true)
+      // TODO: 20210228 added llz
+      if (provider.isInstanceOf[HttpAuthenticationProviderImpl]) {
+        ac.setAuthorizedID(provider.asInstanceOf[HttpAuthenticationProviderImpl].getJwtToken)
+      }
     }
   }
 

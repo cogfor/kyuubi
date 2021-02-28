@@ -89,6 +89,14 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
     saslServer.map(_.getRemoteAddress).map(_.getHostAddress)
       .orElse(Option(TSetIpAddressProcessor.getUserIpAddress))
   }
+
+  // TODO: 20210228 llz
+  def getRemotePw: Option[String] = {
+    Option(TSetIpAddressProcessor.getUserPw)
+  }
+  def getRemoteJwt: Option[String] = {
+    Option(TSetIpAddressProcessor.getUserJwt)
+  }
 }
 object KyuubiAuthenticationFactory {
   val HS2_PROXY_USER = "hive.server2.proxy.user"
