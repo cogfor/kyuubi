@@ -97,8 +97,14 @@ class HttpAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
   }
 
   override def authenticate(user: String, password: String): Unit = {
-    // no-op authentication
     info(s"AnonymousAuthenticationProviderImpl : username=${user}, password=${password}")
+    if (conf.getOption("spark.sql.engine").isDefined) {
+      info("spark.sql.engine defined!")
+      jwtToken = password
+      return
+    }
+
+    // no-op authentication
     val client = httpClientBuilder.build()
     try {
       val authjsonstr = new Gson().toJson(UserCred(user, password))

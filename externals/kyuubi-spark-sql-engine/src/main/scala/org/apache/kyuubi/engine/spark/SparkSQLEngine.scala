@@ -65,9 +65,11 @@ object SparkSQLEngine extends Logging {
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
+
     // TODO: llz changed 20210105 to use k8s operator default config
     // sparkConf.setIfMissing("spark.master", "local")
     // sparkConf.setIfMissing("spark.ui.port", "0")
+    kyuubiConf.set("spark.sql.engine", "true")
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
     // sparkConf.setIfMissing("spark.app.name", appName)
