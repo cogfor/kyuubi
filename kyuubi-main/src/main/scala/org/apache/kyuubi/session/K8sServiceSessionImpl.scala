@@ -356,6 +356,16 @@ class K8sServiceSessionImpl(
         confMap.put(kv._1.substring("set:hiveconf:".length), kv._2)
       }
     })
+
+    if (sessionConf.getOption("spark.application.operator.service.name").nonEmpty) {
+      confMap.put("spark.application.operator.service.name",
+        sessionConf.getOption("spark.application.operator.service.name").get)
+    }
+
+    if (sessionConf.getOption("spark.application.operator.service.port").nonEmpty) {
+      confMap.put("spark.application.operator.service.port",
+        sessionConf.getOption("spark.application.operator.service.port").get)
+    }
     // isDefined
     if (confMap.containsKey("spark.executor.cores")) {
       executorcores = confMap.get("spark.executor.cores").toInt
