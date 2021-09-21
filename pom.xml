@@ -35,6 +35,14 @@
     </modules>
     <packaging>pom</packaging>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub OWNER Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/cogfor/spark-sql-on-k8s</url>
+        </repository>
+    </distributionManagement>
+
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
